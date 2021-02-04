@@ -33,7 +33,8 @@ Mouse = Agent{
     end,
     -- move the agent to a random cell within its habitat
     moveWithinHabitat = function(self)
-        local newCell = Random(self.habitat):sample()
+        local newCell = Random(clone(self.habitat)):sample()
+
         if newCell:isEmpty() then
             self:move(newCell)
         end
