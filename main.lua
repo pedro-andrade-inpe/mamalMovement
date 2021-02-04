@@ -51,11 +51,13 @@ Mouse = Agent{
     end,
     checkCone = function(self)
         local candidates = habitatCone(self:getCell(), 2)
+        local best_candidates = {}
+        local best_grade = self:habitatGrade(self.habitat)
+        local newCell
 
-        local valid_candidates = {}
-        local total_grades = 0
-        local current_grade = self:habitatGrade(self.habitat)
-        local current_habitat_full = self:fullHabitat()
+        if self:fullHabitat() then -- se o habitat atual esta cheio qualquer lugar eh melhor
+            best_grade = math.inf
+        end
 
         forEachElement(candidates, function(_, habitat) -- verifica dentro do cone
             if habitatBurning(habitat) then return end -- at least one cell burning
@@ -63,13 +65,24 @@ Mouse = Agent{
 
             local grade = agent:habitatGrade(habitat)
 
-            -- do not move to a worse habitat if the current habitat is not full
-            if grade < current_grade and not current_habitat_full then return end
-
-            total_grades = total_grades + grade
-
-            table.insert(valid_candidates, {habitat = habitat, grade = grade})
+            if grade > best_grade then
+                best_candidates = {habitat}
+                best_grade = grade
+            elseif grade == current_grade then
+                table.insert(best_candidates, habitat)
+            end
         end)
+
+        if #best_candidates > 1 then
+            newCell = Random(best_candidates):sample()
+        elseif #best_candidates == 1 then
+            newCell = best_candidates[1]
+        end
+
+        if newCell then -- compute the new habitat
+            self:move(newCell)
+            self:buildHabitat(newCell)
+        end
 
         if #valid_candidates == 0 then return end
 
