@@ -1,9 +1,9 @@
 
 dofile("timeAndSpace.lua")
 dofile("habitatCone.lua")
+dofile("queue.lua")
 
--- a habitat is a set of cells
-
+-- a habitat is a vector of cells
 habitatDensity = function(habitat)
     local sum = 0
     forEachElement(habitat, function(_, cell)
@@ -39,15 +39,29 @@ Mouse = Agent{
             self:move(newCell)
         end
     end,
+    validHabitat = function(self, cell)
+        return belong(cell.state, self.validHabitats)
+    end,
     habitatGrade = function(self, habitat)
         local grade = 0
 
         forEachElement(habitat, function(_, cell)
-            grade = grade + self[cell.state]
-            -- cell.state == "forest" and self.forest == 5 => grade = grade + 5
+            if self:validHabitat(cell) then
+                grade = grade + self[cell.state]
+            end
         end)
 
         return grade
+    end,
+    newHabitat = function(self)
+        self.habitat = {}
+    end,
+    addHabitat = function(self, cell)
+        if type(cell) ~= "Cell" then
+            error("wrong cell, got "..type(cell))
+        end
+
+        table.insert(self.habitat, cell)
     end,
     checkCone = function(self)
         local candidates = habitatCone(self:getCell(), 2)
@@ -83,13 +97,51 @@ Mouse = Agent{
             self:move(newCell)
             self:buildHabitat(newCell)
         end
+    end,
+    buildHabitat = function(self, cell)
+        self:move(cell)
+        local addedToQueue = {}
 
-        if #valid_candidates == 0 then return end
+        queue:clean()
+        queue:push(cell)
+        addedToQueue[cell] = true
 
-        -- think on a way of selecting the new habitat
-        new_habitat = valid_candidates[1].habitat
+        local missing = self.lifearea - 1
 
-        self.habitat = new_habitat
+        while missing > 0 and queue:length() > 0 do
+            candidates = {}
+
+            for _ in 1, queue:length() do
+                local newcell = queue:pop()
+
+                if self:validHabitat(newcell) then
+                    table.insert(candidates, newcell)
+
+                    forEachNeighbor(newcell, function(neigh)
+                        if not addedToQueue[neigh] then
+                            addedToQueue[neigh] = true
+                            queue:push(neigh)
+                        end
+                    end)
+                end
+            end
+
+            if #candidates <= missing then
+                forEachElement(candidates, function(_, value)
+                    self:addHabitat(value)
+                end)
+
+                missing = missing - #candidates
+            else -- #candidates > missing
+                while missing > 0 do
+                    local pos = Random{min = 1, max = #candidates, step = 1}:sample()
+
+                    self:addHabitat(candidates[pos])
+                    table.remove(candidates, pos)
+                    missing = missing - 1
+                end
+            end
+        end
     end,
     execute = function(self)
         self:checkCone()
@@ -105,14 +157,16 @@ Mouse = Agent{
             if (self.Age - self.ReproductiveAge) % self.betweenOffspring == 0 then -- a cada ReproductiveAge dias
                 for _ = 1, self.Offspring do
                     local puppy = self:reproduce()
-                    puppy.habitat = {puppy:getCell()}
+--                    puppy:move(self:getCell())
+                    puppy:newHabitat()
+                    puppy:addHabitat(puppy:getCell())
                 end
             end
         end
 
         if self.Age > self.LifeExpectance then
             self:die()
-        elseif self:getCell().burning() == 1 and Random{p = self.BurningProbability}:sample() then
+        elseif self:getCell():burning() == 1 and Random{p = self.BurningProbability}:sample() then
             self:die()
         end
     end
@@ -141,7 +195,7 @@ animal1 = Mouse{
     density = 0.21, -- número de indivíduos por célula
     lifearea = 33, -- pode ser o tamanho do cone para onde ele mora
     perceptualRange = 3, -- número de células onde ele enxerga. No caso, 3 células de distância
-    habitat =  {"forest"},
+    validHabitats =  {"forest"},
 }
 
 animal2 = Mouse{
@@ -166,13 +220,13 @@ animal2 = Mouse{
     density = 0.26, -- indivíduos por célula
     lifearea = 2, -- pode ser o tamanho do cone para onde ele mora
     perceptualRange = 1, -- número de células onde ele enxerga. No caso, 3 células de distância
-    habitat = {"forest", "savanna"},
+    validHabitats = {"forest", "savanna"},
 }
 
 animal3 = Mouse{
     Offspring = 3.53,
     ReproductiveAge = 115,
-    Offspring = 70.75,
+    BetweenOffsprings = 70.75,
     LifeExpectance = 415.26,
     sex = Random {"male", "female"},
     Age = 0,
@@ -191,11 +245,11 @@ animal3 = Mouse{
     density = 0.61, -- indivíduos por célula
     lifearea = 2, -- pode ser o tamanho do cone para onde ele mora
     perceptualRange = 1, -- número de células onde ele enxerga. No caso, 3 células de distância
-    habitat = {"savanna", "grasslands"},
+    validHabitats = {"savanna", "grasslands"},
 }
 
 animal4 = Mouse{
-        Offspring = 3.75,
+    Offspring = 3.75,
     ReproductiveAge = 115,
     BetweenOffspring = 25,
     LifeExpectance = 587,
@@ -216,7 +270,7 @@ animal4 = Mouse{
     density = 0.26, -- indivíduos por célula
     lifearea = 3, -- pode ser o tamanho do cone para onde ele mora
     perceptualRange = 2, -- número de células onde ele enxerga. No caso, 3 células de distância
-    habitat = {"forest"},
+    validHabitats = {"forest"},
 }
 
 soc1 = Society{instance = animal1, quantity = 1000}
@@ -232,7 +286,10 @@ env:createPlacement{} -- colocando a sociedade dentro do espaço
 forEachCell(cs, function(cell)
     local agent = cell:getAgent()
 
-    if agent then agent.habitat = {cell} end
+    if agent then
+        agent:newHabitat()
+        agent:addHabitat(cell)
+    end
 end)
 
 -- this is the simulation
