@@ -72,6 +72,8 @@ cs = CellularSpace{
     instance = cell
 }
 
+cs:createNeighborhood{}
+
 updateBurning = function(time)
     burning_ = {}
 

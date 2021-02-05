@@ -19,7 +19,7 @@ end
 habitatBurning = function(habitat)
     local burning = false
     forEachElement(habitat, function(_, cell)
-        if cell:burning() then
+        if cell:burning() == 1 then
             burning = true
         end
     end)
