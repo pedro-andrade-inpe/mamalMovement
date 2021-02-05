@@ -70,27 +70,27 @@ Mouse = Agent{
         local newCell
 
         if self:fullHabitat() then -- se o habitat atual esta cheio qualquer lugar eh melhor
-            best_grade = math.inf
+            best_grade = 0
         end
 
         forEachElement(candidates, function(_, habitat) -- verifica dentro do cone
             if habitatBurning(habitat) then return end -- at least one cell burning
             if self:fullHabitat(habitat) then return end -- more than allowed density
 
-            local grade = agent:habitatGrade(habitat)
+            local grade = self:habitatGrade(habitat)
 
             if grade > best_grade then
                 best_candidates = {habitat}
                 best_grade = grade
-            elseif grade == current_grade then
+            elseif grade == best_grade then
                 table.insert(best_candidates, habitat)
             end
         end)
 
         if #best_candidates > 1 then
-            newCell = Random(best_candidates):sample()
+            newCell = Random(best_candidates):sample()[1]
         elseif #best_candidates == 1 then
-            newCell = best_candidates[1]
+            newCell = best_candidates[1][1]
         end
 
         if newCell then -- compute the new habitat
@@ -109,9 +109,9 @@ Mouse = Agent{
         local missing = self.lifearea - 1
 
         while missing > 0 and queue:length() > 0 do
-            candidates = {}
+            local candidates = {}
 
-            for _ in 1, queue:length() do
+            for _ = 1, queue:length() do
                 local newcell = queue:pop()
 
                 if self:validHabitat(newcell) then
@@ -154,7 +154,7 @@ Mouse = Agent{
         -- reproductiveAge = 10, betweenoffspring = 4 => 10, 14, 18, 22, etc.
         if self.sex == "female" and not self:fullHabitat() and (self.Age >= self.ReproductiveAge) then
             -- se o habitat estiver cheio na epoca da reproducao ela vai perder a janela de reproducao
-            if (self.Age - self.ReproductiveAge) % self.betweenOffspring == 0 then -- a cada ReproductiveAge dias
+            if (self.Age - self.ReproductiveAge) % self.BetweenOffspring == 0 then -- a cada ReproductiveAge dias
                 for _ = 1, self.Offspring do
                     local puppy = self:reproduce()
 --                    puppy:move(self:getCell())
@@ -176,7 +176,7 @@ animal1 = Mouse{
     Offspring = 6,
     ReproductiveAge = 226,
     BurningProbability = 0.8,
-    BetweenOffsprings = 90,
+    BetweenOffspring = 90,
     LifeExpectance = 472,
     sex = Random {"male", "female"},
     Age = 0,
@@ -226,7 +226,7 @@ animal2 = Mouse{
 animal3 = Mouse{
     Offspring = 3.53,
     ReproductiveAge = 115,
-    BetweenOffsprings = 70.75,
+    BetweenOffspring = 70.75,
     LifeExpectance = 415.26,
     sex = Random {"male", "female"},
     Age = 0,
