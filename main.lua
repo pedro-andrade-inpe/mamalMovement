@@ -153,6 +153,11 @@ Mouse = Agent{
         self:moveWithinHabitat()
         self:lifeCycle()
     end,
+    procreate = function(self)
+        local new_mouse = self:reproduce()
+        new_mouse:newHabitat()
+        new_mouse:addHabitat(puppy:getCell())
+    end,
     lifeCycle = function(self)
         self.Age = self.Age + 1
 
@@ -161,10 +166,13 @@ Mouse = Agent{
             -- se o habitat estiver cheio na epoca da reproducao ela vai perder a janela de reproducao
             if (self.Age - self.ReproductiveAge) % self.BetweenOffspring == 0 then -- a cada ReproductiveAge dias
                 for _ = 1, self.Offspring do
-                    local puppy = self:reproduce()
---                    puppy:move(self:getCell())
-                    puppy:newHabitat()
-                    puppy:addHabitat(puppy:getCell())
+                    self:procreate()
+                end
+
+                local prob = self.Offspring % 1 -- 4.2 => 4 mouses + 20% of change of one more mouse
+
+                if Random{p = prob}:sample() then
+                    self:procreate()
                 end
             end
         end
