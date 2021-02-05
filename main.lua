@@ -319,13 +319,30 @@ map2 = Map{
 --]]
 
 quantityByClass = File("quantity-by-class.csv")
+quantityByCoverage = File("quantity-by-coverage.csv")
 
 quantityByClass:writeLine({"s1", "s2", "s3", "s4", "total"}, ";")
+quantityByCoverage:writeLine({"forest", "grasslands", "pasture", "savanna", "total"}, ";")
 
 writeByClass = function()
    quantityByClass:writeLine({#soc1, #soc2, #soc3, #soc4, #soc1 + #soc2 + #soc3 + #soc4}, ";")
 end
 
+writeByCoverage = function()
+    sum = {forest = 0, grasslands = 0, pasture = 0, savanna = 0}
+
+    forEachCell(cs, function(cell)
+        if sum[cell.state] == nil then return end
+        if cell:getAgent() == nil then return end
+
+        sum[cell.state] = sum[cell.state] + 1
+    end)
+
+    quantityByCoverage:writeLine({sum.forest, sum.grasslands, sum.pasture, sum.savanna,
+                                  sum.forest + sum.grasslands + sum.pasture + sum.savanna}, ";")
+end
+
+writeByCoverage()
 writeByClass()
 
 while currentTime < 19990301 do --20181231 do -- final time
@@ -343,4 +360,5 @@ while currentTime < 19990301 do --20181231 do -- final time
     soc4:execute()
     now:nextday()
     writeByClass()
+    writeByCoverage()
 end
