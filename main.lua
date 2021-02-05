@@ -318,7 +318,17 @@ map2 = Map{
 }
 --]]
 
-while currentTime < 20181231 do -- final time
+quantityByClass = File("quantity-by-class.csv")
+
+quantityByClass:writeLine({"s1", "s2", "s3", "s4", "total"}, ";")
+
+writeByClass = function()
+   quantityByClass:writeLine({#soc1, #soc2, #soc3, #soc4, #soc1 + #soc2 + #soc3 + #soc4}, ";")
+end
+
+writeByClass()
+
+while currentTime < 19990301 do --20181231 do -- final time
     print(currentTime)
     currentTime = now:get()
     if updateLandCover(currentTime) then
@@ -332,4 +342,5 @@ while currentTime < 20181231 do -- final time
     soc3:execute()
     soc4:execute()
     now:nextday()
+    writeByClass()
 end
