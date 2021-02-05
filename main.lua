@@ -4,8 +4,11 @@ dofile("habitatCone.lua")
 dofile("queue.lua")
 
 -- a habitat is a vector of cells
-habitatDensity = function(habitat)
+habitatDensity = function(habitat, self)
     local sum = 0
+
+    if self then sum = -1 end -- ignore the agent itself
+
     forEachElement(habitat, function(_, cell)
         sum = sum + #cell:getAgents()
     end)
@@ -27,7 +30,9 @@ end
 Mouse = Agent{
     -- verifica se o habitat esta cheio
     fullHabitat = function(self, habitat)
-        if habitat == nil then habitat = self.habitat end
+        if habitat == nil then
+            return habitatDensity(self.habitat, true)
+        end
 
         return habitatDensity(habitat) > self.density
     end,
