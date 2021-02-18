@@ -31,7 +31,7 @@ Mouse = Agent{
     -- verifica se o habitat esta cheio
     fullHabitat = function(self, habitat)
         if habitat == nil then
-            return habitatDensity(self.habitat, true)
+            return habitatDensity(self.habitat, true) > self.density
         end
 
         return habitatDensity(habitat) > self.density
