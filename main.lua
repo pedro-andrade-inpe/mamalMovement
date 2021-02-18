@@ -106,18 +106,20 @@ Mouse = Agent{
     buildHabitat = function(self, cell)
         self:move(cell)
         local addedToQueue = {}
+        self:newHabitat()
 
         queue:clean()
         queue:push(cell)
         addedToQueue[cell] = true
 
-        local missing = self.lifearea - 1
-
+        local missing = self.lifearea
+        local i = 0
         while missing > 0 and queue:length() > 0 do
             local candidates = {}
-
+            i = i + 1
             for _ = 1, queue:length() do
                 local newcell = queue:pop()
+                newcell.mcandidate = i
 
                 if self:validHabitat(newcell) then
                     table.insert(candidates, newcell)
@@ -146,6 +148,10 @@ Mouse = Agent{
                     missing = missing - 1
                 end
             end
+        end
+
+        if #self.habitat == 0 then -- could not find any cell
+            self:addHabitat(self:getCell())
         end
     end,
     execute = function(self)
