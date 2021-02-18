@@ -162,7 +162,7 @@ Mouse = Agent{
     procreate = function(self)
         local new_mouse = self:reproduce()
         new_mouse:newHabitat()
-        new_mouse:addHabitat(puppy:getCell())
+        new_mouse:addHabitat(new_mouse:getCell())
     end,
     lifeCycle = function(self)
         self.Age = self.Age + 1
