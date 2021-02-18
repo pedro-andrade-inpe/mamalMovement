@@ -70,6 +70,7 @@ Mouse = Agent{
     end,
     checkCone = function(self)
         local candidates = habitatCone(self:getCell(), 2)
+
         local best_candidates = {}
         local best_grade = self:habitatGrade(self.habitat)
         local newCell
@@ -315,13 +316,13 @@ end)
 -- do not use Timer as time representation is more complex
 currentTime = now:get()
 
---[[
+-- [[
 map = Map{
     target = cs,
     select = "state",
-	value = {"forest", "savanna", "grasslands", "pasture"},
+	value = {"forest", "savanna", "grasslands", "pasture", "crop"},
     --value = {3, 4, 12, 15}, --"4", "12", "15", "19", "21", "33"}, -- forest, savanna, grasslands, pasture, annual and perenial crop, Mosaic of Agriculture and Pasture,River, Lake and Ocean
-    color = {"green","yellow", "orange", "red"}
+    color = {"green","yellow", "orange", "red", "purple"}
 }
 
 map2 = Map{
@@ -348,7 +349,7 @@ writeByClass = function()
 end
 
 writeByCoverage = function()
-    sum = {forest = 0, grasslands = 0, pasture = 0, savanna = 0}
+    local sum = {forest = 0, grasslands = 0, pasture = 0, savanna = 0}
 
     forEachCell(cs, function(cell)
         if sum[cell.state] == nil then return end
@@ -364,15 +365,77 @@ end
 writeByCoverage()
 writeByClass()
 
-while currentTime < 19990301 do --20181231 do -- final time
+updateHabitat = function()
+    forEachCell(cs, function(cell)
+        cell.totHabitat = 0
+    end)
+
+    forEachCell(cs, function(cell)
+        local agent = cell:getAgent()
+
+        if agent then
+            forEachElement(agent.habitat, function(_, mcell)
+                mcell.totHabitat = mcell.totHabitat + 1
+
+                if mcell.totHabitat > 4 then mcell.totHabitat = 4 end
+            end)
+
+            cell.totHabitat = 5
+        end
+    end)
+end
+
+updateHabitat()
+
+m4 = Map{
+    target = cs,
+    select = "totHabitat",
+    value = {0, 1, 2, 3, 4, 5},
+    color = {"white", "lightBlue", "blue", "blue", "darkBlue", "red"}
+}
+
+cleanCandidate = function()
+    forEachCell(cs, function(cell)
+        cell.mcandidate = 0
+    end)
+end
+
+cleanCandidate()
+
+m5 = Map{
+    target = cs,
+    select = "mcandidate",
+    value = {0, 1, 2, 3, 4, 5},
+    color = {"white", "lightBlue", "blue", "darkBlue", "yellow", "red"}
+}
+
+cell_size = Cell{
+    soc1 = function() return #soc1 end,
+    soc2 = function() return #soc2 end,
+    soc3 = function() return #soc3 end,
+    soc4 = function() return #soc4 end,
+}
+
+chart_size = Chart{
+    target = cell_size,
+    select = {"soc1", "soc2", "soc3", "soc4"},
+    color = {"red", "green", "blue", "magenta"}
+}
+
+step = 1
+-- [[
+while currentTime < 19990903 do --19990301 do --20181231 do -- final time
+    cleanCandidate()
     print(currentTime)
+    updateHabitat()
     currentTime = now:get()
     if updateLandCover(currentTime) then
---        map: update()
+        map:update()
     end
     if updateBurning(currentTime) then
---        map2:update()
+        map2:update()
     end
+    m4:update()
     soc1:execute()
     soc2:execute()
     soc3:execute()
@@ -380,4 +443,8 @@ while currentTime < 19990301 do --20181231 do -- final time
     now:nextday()
     writeByClass()
     writeByCoverage()
+    m5:update()
+    chart_size:update(step)
+    step = step + 1
 end
+--]]
